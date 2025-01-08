@@ -1,0 +1,879 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="generator" content="VuePress 2.0.0-rc.19" /><meta name="theme" content="VuePress Theme Plume " /><script id="check-mac-os">document.documentElement.classList.toggle('mac', /Mac|iPhone|iPod|iPad/i.test(navigator.platform))</script><script id="check-dark-mode">;(function () {const um= localStorage.getItem('vuepress-theme-appearance') || 'auto';const sm = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;const isDark = um === 'dark' || (um !== 'light' && sm);document.documentElement.dataset.theme = isDark ? 'dark' : 'light';})();</script><meta property="og:url" content="https://blog.shaocz.me/article/fskiz8q5/"><meta property="og:site_name" content="未眠的蓝鸟"><meta property="og:title" content="Docker安装postgresql"><meta property="og:description" content="注意 以下操作都在Ubuntu环境下进行，也可在其他Linux系统下操作，但如果出现问题请自行解决。 注意 使用non-root用户启动容器，默认当前用户，如有需要请自行更改 docker工作目录树 新建docker工作目录 创建Dockerfile用来自定义构建容器 创建docker compose配置文件 compose.yaml 构建并启动 参考"><meta property="og:type" content="article"><meta property="og:locale" content="zh-CN"><meta property="og:updated_time" content="2025-01-01T06:09:32.000Z"><meta property="article:tag" content="docker"><meta property="article:tag" content="postgresql"><meta property="article:modified_time" content="2025-01-01T06:09:32.000Z"><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Docker安装postgresql","image":[""],"dateModified":"2025-01-01T06:09:32.000Z","author":[]}</script><title>Docker安装postgresql | 未眠的蓝鸟</title><meta name="description" content="注意 以下操作都在Ubuntu环境下进行，也可在其他Linux系统下操作，但如果出现问题请自行解决。 注意 使用non-root用户启动容器，默认当前用户，如有需要请自行更改 docker工作目录树 新建docker工作目录 创建Dockerfile用来自定义构建容器 创建docker compose配置文件 compose.yaml 构建并启动 参考"><link rel="preload" href="/assets/style-BaapMUVF.css" as="style"><link rel="stylesheet" href="/assets/style-BaapMUVF.css"><link rel="modulepreload" href="/assets/app-DCT_UAW9.js"><link rel="modulepreload" href="/assets/index.html-CC9FMryh.js"><link rel="prefetch" href="/assets/index.html-BXkujw0f.js" as="script"><link rel="prefetch" href="/assets/index.html-DbPI0jtP.js" as="script"><link rel="prefetch" href="/assets/index.html-B-gD3Ins.js" as="script"><link rel="prefetch" href="/assets/index.html-C5j9npPN.js" as="script"><link rel="prefetch" href="/assets/index.html-BOIi1HsN.js" as="script"><link rel="prefetch" href="/assets/index.html-BObI_yvl.js" as="script"><link rel="prefetch" href="/assets/index.html-DDOvuoAS.js" as="script"><link rel="prefetch" href="/assets/index.html-BF_Bhtfm.js" as="script"><link rel="prefetch" href="/assets/404.html-EgLRgHmj.js" as="script"><link rel="prefetch" href="/assets/index.html-5a24kwQZ.js" as="script"><link rel="prefetch" href="/assets/index.html-CwrmHVgc.js" as="script"><link rel="prefetch" href="/assets/index.html-mjvOazzP.js" as="script"><link rel="prefetch" href="/assets/photoswipe.esm-GXRgw7eJ.js" as="script"><link rel="prefetch" href="/assets/searchBox-default-eWTYH61s.js" as="script"><link rel="prefetch" href="/assets/SearchBox-CuPKlPaD.js" as="script"><link rel="prefetch" href="/assets/giscus-BZxmVUME.js" as="script"><link rel="prefetch" href="/assets/setupDevtools-7MC2TMWH-C3I_RvmR.js" as="script"></head><body><div id="app"><!--[--><!--[--><div class="theme-plume vp-layout" vp-container data-v-3b796272><!--[--><!--[--><!--]--><!--[--><span tabindex="-1" data-v-b6aad1d5></span><a href="#VPContent" class="vp-skip-link visually-hidden" data-v-b6aad1d5> Skip to content </a><!--]--><!----><header class="vp-nav" data-v-3b796272 data-v-c297c0bd><div class="vp-navbar" vp-navbar data-v-c297c0bd data-v-bb69b24f><div class="wrapper" data-v-bb69b24f><div class="container" data-v-bb69b24f><div class="title" data-v-bb69b24f><div class="vp-navbar-title" data-v-bb69b24f data-v-d558de0a><a class="vp-link no-icon link title" href="/" data-v-d558de0a data-v-012aed44><!--[--><!--[--><!--]--><!--[--><!--[--><!--[--><img class="vp-image dark logo" src="/avatar.png" alt data-v-11ffd7ee><!--]--><!--[--><img class="vp-image light logo" src="/avatar.png" alt data-v-11ffd7ee><!--]--><!--]--><!--]--><span data-v-d558de0a>未眠的蓝鸟</span><!--[--><!--]--><!--]--><!----></a></div></div><div class="content" data-v-bb69b24f><div class="content-body" data-v-bb69b24f><!--[--><!--]--><div class="vp-navbar-search search" data-v-bb69b24f><div class="search-wrapper" data-v-d4b502e9><!----><div id="local-search" data-v-d4b502e9><button type="button" class="mini-search mini-search-button" aria-label="搜索文档" data-v-d4b502e9><span class="mini-search-button-container"><svg class="mini-search-search-icon" width="20" height="20" viewBox="0 0 20 20" aria-label="search icon"><path d="M14.386 14.386l4.0877 4.0877-4.0877-4.0877c-2.9418 2.9419-7.7115 2.9419-10.6533 0-2.9419-2.9418-2.9419-7.7115 0-10.6533 2.9418-2.9419 7.7115-2.9419 10.6533 0 2.9419 2.9418 2.9419 7.7115 0 10.6533z" stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"></path></svg><span class="mini-search-button-placeholder">搜索文档</span></span><span class="mini-search-button-keys"><kbd class="mini-search-button-key"></kbd><kbd class="mini-search-button-key">K</kbd></span></button></div></div></div><nav aria-labelledby="main-nav-aria-label" class="vp-navbar-menu menu" data-v-bb69b24f data-v-7002fba1><span id="main-nav-aria-label" class="visually-hidden" data-v-7002fba1>Main Navigation</span><!--[--><!--[--><a class="vp-link no-icon link navbar-menu-link" href="/" tabindex="0" data-v-7002fba1 data-v-3a3e7cd6 data-v-012aed44><!--[--><!----><span data-v-3a3e7cd6>首页</span><!--]--><!----></a><!--]--><!--[--><a class="vp-link no-icon link navbar-menu-link" href="/blog/tags/" tabindex="0" data-v-7002fba1 data-v-3a3e7cd6 data-v-012aed44><!--[--><!----><span data-v-3a3e7cd6>标签</span><!--]--><!----></a><!--]--><!--[--><a class="vp-link no-icon link navbar-menu-link" href="/blog/archives/" tabindex="0" data-v-7002fba1 data-v-3a3e7cd6 data-v-012aed44><!--[--><!----><span data-v-3a3e7cd6>归档</span><!--]--><!----></a><!--]--><!--]--></nav><!----><div class="vp-navbar-appearance appearance" data-v-bb69b24f data-v-b4474b4c><button class="vp-switch vp-switch-appearance" type="button" role="switch" title aria-checked="false" data-v-b4474b4c data-v-827db9c5 data-v-aa2bb96a><span class="check" data-v-aa2bb96a><span class="icon" data-v-aa2bb96a><!--[--><span class="vpi-sun sun" data-v-827db9c5></span><span class="vpi-moon moon" data-v-827db9c5></span><!--]--></span></span></button></div><!----><div class="vp-flyout vp-navbar-extra extra" data-v-bb69b24f data-v-e1edb82e data-v-b6920b06><button type="button" class="button" aria-haspopup="true" aria-expanded="false" aria-label="extra navigation" data-v-b6920b06><span class="vpi-more-horizontal icon" data-v-b6920b06></span></button><div class="menu" data-v-b6920b06><div class="vp-menu" data-v-b6920b06 data-v-392d105a><!----><!--[--><!--[--><!----><div class="group" data-v-e1edb82e><div class="item appearance" data-v-e1edb82e><p class="label" data-v-e1edb82e>外观</p><div class="appearance-action" data-v-e1edb82e><button class="vp-switch vp-switch-appearance" type="button" role="switch" title aria-checked="false" data-v-e1edb82e data-v-827db9c5 data-v-aa2bb96a><span class="check" data-v-aa2bb96a><span class="icon" data-v-aa2bb96a><!--[--><span class="vpi-sun sun" data-v-827db9c5></span><span class="vpi-moon moon" data-v-827db9c5></span><!--]--></span></span></button></div></div></div><!----><!--]--><!--]--></div></div></div><!--[--><!--]--><button type="button" class="vp-navbar-hamburger hamburger" aria-label="mobile navigation" aria-expanded="false" aria-controls="nav-screen" data-v-bb69b24f data-v-9dc07bc4><span class="container" data-v-9dc07bc4><span class="top" data-v-9dc07bc4></span><span class="middle" data-v-9dc07bc4></span><span class="bottom" data-v-9dc07bc4></span></span></button></div></div></div></div><div class="divider" data-v-bb69b24f><div class="divider-line" data-v-bb69b24f></div></div></div><!----></header><div class="vp-local-nav fixed reached-top is-blog" data-v-3b796272 data-v-9a251fab><button class="hidden menu" disabled aria-expanded="false" aria-controls="SidebarNav" data-v-9a251fab><span class="vpi-align-left menu-icon" data-v-9a251fab></span><span class="menu-text" data-v-9a251fab>Menu</span></button><div class="vp-local-nav-outline-dropdown" style="--vp-vh:0px;" data-v-9a251fab data-v-20ccee34><button data-v-20ccee34>返回顶部</button><!----></div></div><!----><!--[--><div id="VPContent" vp-content class="vp-content" data-v-3b796272 data-v-8b111e1a><div class="is-blog vp-doc-container" data-v-fc4bf443><!--[--><!--]--><div class="container" data-v-fc4bf443><!----><div class="content" data-v-fc4bf443><div class="content-container" data-v-fc4bf443><!--[--><!--]--><main class="main" data-v-fc4bf443><nav class="vp-breadcrumb" data-v-fc4bf443 data-v-62ba2917><ol vocab="https://schema.org/" typeof="BreadcrumbList" data-v-62ba2917><!--[--><li property="itemListElement" typeof="ListItem" data-v-62ba2917><a class="vp-link no-icon link breadcrumb" href="/" property="item" typeof="WebPage" data-v-62ba2917 data-v-012aed44><!--[-->首页<!--]--><!----></a><span class="vpi-chevron-right" data-v-62ba2917></span><meta property="name" content="首页" data-v-62ba2917><meta property="position" content="1" data-v-62ba2917></li><li property="itemListElement" typeof="ListItem" data-v-62ba2917><a class="vp-link no-icon link breadcrumb" href="/blog/categories/?id=05b605" property="item" typeof="WebPage" data-v-62ba2917 data-v-012aed44><!--[-->docker<!--]--><!----></a><span class="vpi-chevron-right" data-v-62ba2917></span><meta property="name" content="docker" data-v-62ba2917><meta property="position" content="2" data-v-62ba2917></li><li property="itemListElement" typeof="ListItem" data-v-62ba2917><a class="vp-link no-icon link breadcrumb current" href="/article/fskiz8q5/" property="item" typeof="WebPage" data-v-62ba2917 data-v-012aed44><!--[-->Docker安装postgresql<!--]--><!----></a><!----><meta property="name" content="Docker安装postgresql" data-v-62ba2917><meta property="position" content="3" data-v-62ba2917></li><!--]--></ol></nav><!--[--><h1 class="vp-doc-title page-title" data-v-4c4a7153>Docker安装postgresql <!----></h1><div class="vp-doc-meta" data-v-4c4a7153><p class="reading-time" data-v-4c4a7153><span class="vpi-books icon" data-v-4c4a7153></span><span data-v-4c4a7153>3570 字</span><span data-v-4c4a7153>约 12 分钟</span></p><p data-v-4c4a7153><span class="vpi-tag icon" data-v-4c4a7153></span><!--[--><a class="vp-link no-icon link tag vp-tag-eanl" href="/blog/tags/?tag=docker" data-v-4c4a7153 data-v-012aed44><!--[-->docker<!--]--><!----></a><a class="vp-link no-icon link tag vp-tag-ahmv" href="/blog/tags/?tag=postgresql" data-v-4c4a7153 data-v-012aed44><!--[-->postgresql<!--]--><!----></a><!--]--></p><p class="create-time" data-v-4c4a7153><span class="vpi-clock icon" data-v-4c4a7153></span><span data-v-4c4a7153>2024-12-28</span></p></div><!--]--><div class="_article_fskiz8q5_ external-link-icon-enabled vp-doc plume-content" vp-content data-v-fc4bf443><div data-v-fc4bf443><div class="hint-container warning"><p class="hint-container-title">注意</p><p>以下操作都在Ubuntu环境下进行，也可在其他Linux系统下操作，但如果出现问题请自行解决。</p></div><div class="hint-container warning"><p class="hint-container-title">注意</p><p>使用non-root用户启动容器，默认当前用户，如有需要请自行更改</p></div><h2 id="docker工作目录树" tabindex="-1"><a class="header-anchor" href="#docker工作目录树"><span>docker工作目录树</span></a></h2><article class="vp-card-wrapper" data-v-3a2cdab8><!--[--><!----><!--]--><div class="body" data-v-3a2cdab8><!--[--><div class="vp-file-tree"><ul><li class="file-tree-item expanded"><!--[--><span class="tree-node folder"><span class="vp-icon vpi-e92com47 bg" style="" data-v-73d21d1b></span><span class="name">docker</span></span><ul><li class="file-tree-item expanded"><!--[--><span class="tree-node folder"><span class="vp-icon vpi-e92com47 bg" style="" data-v-73d21d1b></span><span class="name">postgres</span></span><ul><li class="file-tree-item expanded"><!--[--><span class="tree-node folder"><span class="vp-icon vpi-re1ace1b bg" style="" data-v-73d21d1b></span><span class="name">conf</span></span><ul><li class="file-tree-item"><!--[--><span class="tree-node file"><span class="vp-icon vpi-2pp9lwl5 bg" style="" data-v-73d21d1b></span><span class="name">postgresql.conf</span></span><!--]--><!----></li></ul><!--]--><!----></li><li class="file-tree-item expanded"><!--[--><span class="tree-node folder"><span class="vp-icon vpi-6s3dhutp bg" style="" data-v-73d21d1b></span><span class="name">sql</span></span><ul><li class="file-tree-item"><!--[--><span class="tree-node file"><span class="vp-icon vpi-e9iwucy6 bg" style="" data-v-73d21d1b></span><span class="name">xxx.sql</span></span><!--]--><!----></li><li class="file-tree-item"><!--[--><span class="tree-node file"><span class="vp-icon vpi-e9iwucy6 bg" style="" data-v-73d21d1b></span><span class="name">xxx.sql</span></span><!--]--><!----></li></ul><!--]--><!----></li><li class="file-tree-item"><!--[--><span class="tree-node file"><span class="vp-icon vpi-hq5u4pvp bg" style="" data-v-73d21d1b></span><span class="name">Dockerfile</span></span><!--]--><!----></li></ul><!--]--><!----></li><li class="file-tree-item"><!--[--><span class="tree-node file"><span class="vp-icon vpi-bctc4e00 bg" style="" data-v-73d21d1b></span><span class="name">compose.yaml</span></span><!--]--><!----></li><li class="file-tree-item"><!--[--><span class="tree-node file"><span class="vp-icon vpi-6arsz0z8 bg" style="" data-v-73d21d1b></span><span class="name">.env</span></span><!--]--><!----></li></ul><!--]--><!----></li></ul></div><!--]--></div></article><h2 id="新建docker工作目录" tabindex="-1"><a class="header-anchor" href="#新建docker工作目录"><span>新建docker工作目录</span></a></h2><article class="vp-card-wrapper" data-v-3a2cdab8><!--[--><!----><!--]--><div class="body" data-v-3a2cdab8><!--[--><div class="language-shell line-numbers-mode" data-ext="shell" data-title="shell"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">mkdir</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -p</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> docker</span><span style="--shiki-light:#999999;--shiki-dark:#666666;"> &amp;&amp;</span><span style="--shiki-light:#998418;--shiki-dark:#B8A965;"> cd</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> docker</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div></div></div><!--]--></div></article><h2 id="创建dockerfile用来自定义构建容器" tabindex="-1"><a class="header-anchor" href="#创建dockerfile用来自定义构建容器"><span>创建Dockerfile用来自定义构建容器</span></a></h2><article class="vp-card-wrapper" data-v-3a2cdab8><!--[--><!----><!--]--><div class="body" data-v-3a2cdab8><!--[--><div class="vp-steps"><ol><li>新建postgres目录、conf配置文件目录、sql脚本目录（可选）</li></ol><div class="language-shell line-numbers-mode" data-ext="shell" data-title="shell"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">mkdir</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -p</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> postgres</span><span style="--shiki-light:#999999;--shiki-dark:#666666;"> &amp;&amp;</span><span style="--shiki-light:#998418;--shiki-dark:#B8A965;"> cd</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> postgres</span></span>
+<span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">mkdir</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -p</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> conf</span></span>
+<span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">mkdir</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -p</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> sql</span><span style="--shiki-light:#A0ADA0;--shiki-dark:#758575DD;"> # 可选</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><div class="hint-container tip"><p class="hint-container-title">提示</p><p>可以把建表sql脚本放入 <strong>postgres/sql</strong> 目录下，在Dockerfile中使用 <strong>COPY sql/*.sql /docker-entrypoint-initdb.d/</strong> 语句将脚本拷贝到容器内，postgres容器启动时会自动帮你执行。</p></div><ol start="2"><li>conf目录下新建配置文件postgresql.conf</li></ol><div class="hint-container tip"><p class="hint-container-title">提示</p><div class="language-shell line-numbers-mode" data-ext="shell" data-title="shell"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">vim</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> conf/postgresql.conf</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div></div></div></div><details class="hint-container details"><summary>点我查看postgresql.conf配置</summary><div class="language-postgresql.conf line-numbers-mode" data-ext="postgresql.conf" data-title="postgresql.conf"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span># -----------------------------</span></span>
+<span class="line"><span># PostgreSQL configuration file</span></span>
+<span class="line"><span># -----------------------------</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># This file consists of lines of the form:</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span>#   name = value</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># (The &quot;=&quot; is optional.)  Whitespace may be used.  Comments are introduced with</span></span>
+<span class="line"><span># &quot;#&quot; anywhere on a line.  The complete list of parameter names and allowed</span></span>
+<span class="line"><span># values can be found in the PostgreSQL documentation.</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># The commented-out settings shown in this file represent the default values.</span></span>
+<span class="line"><span># Re-commenting a setting is NOT sufficient to revert it to the default value;</span></span>
+<span class="line"><span># you need to reload the server.</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># This file is read on server startup and when the server receives a SIGHUP</span></span>
+<span class="line"><span># signal.  If you edit the file on a running system, you have to SIGHUP the</span></span>
+<span class="line"><span># server for the changes to take effect, run &quot;pg_ctl reload&quot;, or execute</span></span>
+<span class="line"><span># &quot;SELECT pg_reload_conf()&quot;.  Some parameters, which are marked below,</span></span>
+<span class="line"><span># require a server shutdown and restart to take effect.</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># Any parameter can also be given as a command-line option to the server, e.g.,</span></span>
+<span class="line"><span># &quot;postgres -c log_connections=on&quot;.  Some parameters can be changed at run time</span></span>
+<span class="line"><span># with the &quot;SET&quot; SQL command.</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># Memory units:  B  = bytes            Time units:  us  = microseconds</span></span>
+<span class="line"><span>#                kB = kilobytes                     ms  = milliseconds</span></span>
+<span class="line"><span>#                MB = megabytes                     s   = seconds</span></span>
+<span class="line"><span>#                GB = gigabytes                     min = minutes</span></span>
+<span class="line"><span>#                TB = terabytes                     h   = hours</span></span>
+<span class="line"><span>#                                                   d   = days</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># FILE LOCATIONS</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># The default values of these variables are driven from the -D command-line</span></span>
+<span class="line"><span># option or PGDATA environment variable, represented here as ConfigDir.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#data_directory = &#39;ConfigDir&#39;		# use data in another directory</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#hba_file = &#39;ConfigDir/pg_hba.conf&#39;	# host-based authentication file</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#ident_file = &#39;ConfigDir/pg_ident.conf&#39;	# ident configuration file</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># If external_pid_file is not explicitly set, no extra PID file is written.</span></span>
+<span class="line"><span>#external_pid_file = &#39;&#39;			# write an extra PID file</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># CONNECTIONS AND AUTHENTICATION</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Connection Settings -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>listen_addresses = &#39;*&#39;</span></span>
+<span class="line"><span>					# comma-separated list of addresses;</span></span>
+<span class="line"><span>					# defaults to &#39;localhost&#39;; use &#39;*&#39; for all</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#port = 5432				# (change requires restart)</span></span>
+<span class="line"><span>max_connections = 200			# (change requires restart)</span></span>
+<span class="line"><span>#reserved_connections = 0		# (change requires restart)</span></span>
+<span class="line"><span>#superuser_reserved_connections = 3	# (change requires restart)</span></span>
+<span class="line"><span>#unix_socket_directories = &#39;/tmp&#39;	# comma-separated list of directories</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#unix_socket_group = &#39;&#39;			# (change requires restart)</span></span>
+<span class="line"><span>#unix_socket_permissions = 0777		# begin with 0 to use octal notation</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#bonjour = off				# advertise server via Bonjour</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#bonjour_name = &#39;&#39;			# defaults to the computer name</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - TCP settings -</span></span>
+<span class="line"><span># see &quot;man tcp&quot; for details</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#tcp_keepalives_idle = 0		# TCP_KEEPIDLE, in seconds;</span></span>
+<span class="line"><span>					# 0 selects the system default</span></span>
+<span class="line"><span>#tcp_keepalives_interval = 0		# TCP_KEEPINTVL, in seconds;</span></span>
+<span class="line"><span>					# 0 selects the system default</span></span>
+<span class="line"><span>#tcp_keepalives_count = 0		# TCP_KEEPCNT;</span></span>
+<span class="line"><span>					# 0 selects the system default</span></span>
+<span class="line"><span>#tcp_user_timeout = 0			# TCP_USER_TIMEOUT, in milliseconds;</span></span>
+<span class="line"><span>					# 0 selects the system default</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#client_connection_check_interval = 0	# time between checks for client</span></span>
+<span class="line"><span>					# disconnection while running queries;</span></span>
+<span class="line"><span>					# 0 for never</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Authentication -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#authentication_timeout = 1min		# 1s-600s</span></span>
+<span class="line"><span>#password_encryption = scram-sha-256	# scram-sha-256 or md5</span></span>
+<span class="line"><span>#scram_iterations = 4096</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># GSSAPI using Kerberos</span></span>
+<span class="line"><span>#krb_server_keyfile = &#39;FILE:${sysconfdir}/krb5.keytab&#39;</span></span>
+<span class="line"><span>#krb_caseins_users = off</span></span>
+<span class="line"><span>#gss_accept_delegation = off</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - SSL -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#ssl = off</span></span>
+<span class="line"><span>#ssl_ca_file = &#39;&#39;</span></span>
+<span class="line"><span>#ssl_cert_file = &#39;server.crt&#39;</span></span>
+<span class="line"><span>#ssl_crl_file = &#39;&#39;</span></span>
+<span class="line"><span>#ssl_crl_dir = &#39;&#39;</span></span>
+<span class="line"><span>#ssl_key_file = &#39;server.key&#39;</span></span>
+<span class="line"><span>#ssl_ciphers = &#39;HIGH:MEDIUM:+3DES:!aNULL&#39;	# allowed SSL ciphers</span></span>
+<span class="line"><span>#ssl_prefer_server_ciphers = on</span></span>
+<span class="line"><span>#ssl_ecdh_curve = &#39;prime256v1&#39;</span></span>
+<span class="line"><span>#ssl_min_protocol_version = &#39;TLSv1.2&#39;</span></span>
+<span class="line"><span>#ssl_max_protocol_version = &#39;&#39;</span></span>
+<span class="line"><span>#ssl_dh_params_file = &#39;&#39;</span></span>
+<span class="line"><span>#ssl_passphrase_command = &#39;&#39;</span></span>
+<span class="line"><span>#ssl_passphrase_command_supports_reload = off</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># RESOURCE USAGE (except WAL)</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Memory -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>shared_buffers = 2048MB			# min 128kB</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#huge_pages = try			# on, off, or try</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#huge_page_size = 0			# zero for system default</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#temp_buffers = 8MB			# min 800kB</span></span>
+<span class="line"><span>#max_prepared_transactions = 0		# zero disables the feature</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span># Caution: it is not advisable to set max_prepared_transactions nonzero unless</span></span>
+<span class="line"><span># you actively intend to use prepared transactions.</span></span>
+<span class="line"><span>#work_mem = 4MB				# min 64kB</span></span>
+<span class="line"><span>#hash_mem_multiplier = 2.0		# 1-1000.0 multiplier on hash table work_mem</span></span>
+<span class="line"><span>#maintenance_work_mem = 64MB		# min 64kB</span></span>
+<span class="line"><span>#autovacuum_work_mem = -1		# min 64kB, or -1 to use maintenance_work_mem</span></span>
+<span class="line"><span>#logical_decoding_work_mem = 64MB	# min 64kB</span></span>
+<span class="line"><span>#max_stack_depth = 2MB			# min 100kB</span></span>
+<span class="line"><span>#shared_memory_type = mmap		# the default is the first option</span></span>
+<span class="line"><span>					# supported by the operating system:</span></span>
+<span class="line"><span>					#   mmap</span></span>
+<span class="line"><span>					#   sysv</span></span>
+<span class="line"><span>					#   windows</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#dynamic_shared_memory_type = posix	# the default is usually the first option</span></span>
+<span class="line"><span>					# supported by the operating system:</span></span>
+<span class="line"><span>					#   posix</span></span>
+<span class="line"><span>					#   sysv</span></span>
+<span class="line"><span>					#   windows</span></span>
+<span class="line"><span>					#   mmap</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#min_dynamic_shared_memory = 0MB	# (change requires restart)</span></span>
+<span class="line"><span>#vacuum_buffer_usage_limit = 2MB	# size of vacuum and analyze buffer access strategy ring;</span></span>
+<span class="line"><span>					# 0 to disable vacuum buffer access strategy;</span></span>
+<span class="line"><span>					# range 128kB to 16GB</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># SLRU buffers (change requires restart)</span></span>
+<span class="line"><span>#commit_timestamp_buffers = 0		# memory for pg_commit_ts (0 = auto)</span></span>
+<span class="line"><span>#multixact_offset_buffers = 16		# memory for pg_multixact/offsets</span></span>
+<span class="line"><span>#multixact_member_buffers = 32		# memory for pg_multixact/members</span></span>
+<span class="line"><span>#notify_buffers = 16			# memory for pg_notify</span></span>
+<span class="line"><span>#serializable_buffers = 32		# memory for pg_serial</span></span>
+<span class="line"><span>#subtransaction_buffers = 0		# memory for pg_subtrans (0 = auto)</span></span>
+<span class="line"><span>#transaction_buffers = 0		# memory for pg_xact (0 = auto)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Disk -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#temp_file_limit = -1			# limits per-process temp file space</span></span>
+<span class="line"><span>					# in kilobytes, or -1 for no limit</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#max_notify_queue_pages = 1048576	# limits the number of SLRU pages allocated</span></span>
+<span class="line"><span>					# for NOTIFY / LISTEN queue</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Kernel Resources -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#max_files_per_process = 1000		# min 64</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Cost-Based Vacuum Delay -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#vacuum_cost_delay = 0			# 0-100 milliseconds (0 disables)</span></span>
+<span class="line"><span>#vacuum_cost_page_hit = 1		# 0-10000 credits</span></span>
+<span class="line"><span>#vacuum_cost_page_miss = 2		# 0-10000 credits</span></span>
+<span class="line"><span>#vacuum_cost_page_dirty = 20		# 0-10000 credits</span></span>
+<span class="line"><span>#vacuum_cost_limit = 200		# 1-10000 credits</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Background Writer -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#bgwriter_delay = 200ms			# 10-10000ms between rounds</span></span>
+<span class="line"><span>#bgwriter_lru_maxpages = 100		# max buffers written/round, 0 disables</span></span>
+<span class="line"><span>#bgwriter_lru_multiplier = 2.0		# 0-10.0 multiplier on buffers scanned/round</span></span>
+<span class="line"><span>#bgwriter_flush_after = 0		# measured in pages, 0 disables</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Asynchronous Behavior -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#backend_flush_after = 0		# measured in pages, 0 disables</span></span>
+<span class="line"><span>#effective_io_concurrency = 1		# 1-1000; 0 disables prefetching</span></span>
+<span class="line"><span>#maintenance_io_concurrency = 10	# 1-1000; 0 disables prefetching</span></span>
+<span class="line"><span>#io_combine_limit = 128kB		# usually 1-32 blocks (depends on OS)</span></span>
+<span class="line"><span>#max_worker_processes = 8		# (change requires restart)</span></span>
+<span class="line"><span>#max_parallel_workers_per_gather = 2	# limited by max_parallel_workers</span></span>
+<span class="line"><span>#max_parallel_maintenance_workers = 2	# limited by max_parallel_workers</span></span>
+<span class="line"><span>#max_parallel_workers = 8		# number of max_worker_processes that</span></span>
+<span class="line"><span>					# can be used in parallel operations</span></span>
+<span class="line"><span>#parallel_leader_participation = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># WRITE-AHEAD LOG</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Settings -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#wal_level = replica			# minimal, replica, or logical</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#fsync = on				# flush data to disk for crash safety</span></span>
+<span class="line"><span>					# (turning this off can cause</span></span>
+<span class="line"><span>					# unrecoverable data corruption)</span></span>
+<span class="line"><span>#synchronous_commit = on		# synchronization level;</span></span>
+<span class="line"><span>					# off, local, remote_write, remote_apply, or on</span></span>
+<span class="line"><span>#wal_sync_method = fsync		# the default is the first option</span></span>
+<span class="line"><span>					# supported by the operating system:</span></span>
+<span class="line"><span>					#   open_datasync</span></span>
+<span class="line"><span>					#   fdatasync (default on Linux and FreeBSD)</span></span>
+<span class="line"><span>					#   fsync</span></span>
+<span class="line"><span>					#   fsync_writethrough</span></span>
+<span class="line"><span>					#   open_sync</span></span>
+<span class="line"><span>#full_page_writes = on			# recover from partial page writes</span></span>
+<span class="line"><span>#wal_log_hints = off			# also do full page writes of non-critical updates</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#wal_compression = off			# enables compression of full-page writes;</span></span>
+<span class="line"><span>					# off, pglz, lz4, zstd, or on</span></span>
+<span class="line"><span>#wal_init_zero = on			# zero-fill new WAL files</span></span>
+<span class="line"><span>#wal_recycle = on			# recycle WAL files</span></span>
+<span class="line"><span>#wal_buffers = -1			# min 32kB, -1 sets based on shared_buffers</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#wal_writer_delay = 200ms		# 1-10000 milliseconds</span></span>
+<span class="line"><span>#wal_writer_flush_after = 1MB		# measured in pages, 0 disables</span></span>
+<span class="line"><span>#wal_skip_threshold = 2MB</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#commit_delay = 0			# range 0-100000, in microseconds</span></span>
+<span class="line"><span>#commit_siblings = 5			# range 1-1000</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Checkpoints -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#checkpoint_timeout = 5min		# range 30s-1d</span></span>
+<span class="line"><span>#checkpoint_completion_target = 0.9	# checkpoint target duration, 0.0 - 1.0</span></span>
+<span class="line"><span>#checkpoint_flush_after = 0		# measured in pages, 0 disables</span></span>
+<span class="line"><span>#checkpoint_warning = 30s		# 0 disables</span></span>
+<span class="line"><span>#max_wal_size = 1GB</span></span>
+<span class="line"><span>#min_wal_size = 80MB</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Prefetching during recovery -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#recovery_prefetch = try	# prefetch pages referenced in the WAL?</span></span>
+<span class="line"><span>#wal_decode_buffer_size = 512kB	# lookahead window used for prefetching</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Archiving -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#archive_mode = off		# enables archiving; off, on, or always</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#archive_library = &#39;&#39;		# library to use to archive a WAL file</span></span>
+<span class="line"><span>				# (empty string indicates archive_command should</span></span>
+<span class="line"><span>				# be used)</span></span>
+<span class="line"><span>#archive_command = &#39;&#39;		# command to use to archive a WAL file</span></span>
+<span class="line"><span>				# placeholders: %p = path of file to archive</span></span>
+<span class="line"><span>				#               %f = file name only</span></span>
+<span class="line"><span>				# e.g. &#39;test ! -f /mnt/server/archivedir/%f &amp;&amp; cp %p /mnt/server/archivedir/%f&#39;</span></span>
+<span class="line"><span>#archive_timeout = 0		# force a WAL file switch after this</span></span>
+<span class="line"><span>				# number of seconds; 0 disables</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Archive Recovery -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These are only used in recovery mode.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#restore_command = &#39;&#39;		# command to use to restore an archived WAL file</span></span>
+<span class="line"><span>				# placeholders: %p = path of file to restore</span></span>
+<span class="line"><span>				#               %f = file name only</span></span>
+<span class="line"><span>				# e.g. &#39;cp /mnt/server/archivedir/%f %p&#39;</span></span>
+<span class="line"><span>#archive_cleanup_command = &#39;&#39;	# command to execute at every restartpoint</span></span>
+<span class="line"><span>#recovery_end_command = &#39;&#39;	# command to execute at completion of recovery</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Recovery Target -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># Set these only when performing a targeted recovery.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#recovery_target = &#39;&#39;		# &#39;immediate&#39; to end recovery as soon as a</span></span>
+<span class="line"><span>				# consistent state is reached</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_name = &#39;&#39;	# the named restore point to which recovery will proceed</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_time = &#39;&#39;	# the time stamp up to which recovery will proceed</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_xid = &#39;&#39;	# the transaction ID up to which recovery will proceed</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_lsn = &#39;&#39;	# the WAL LSN up to which recovery will proceed</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_inclusive = on	# Specifies whether to stop:</span></span>
+<span class="line"><span>				# just after the specified recovery target (on)</span></span>
+<span class="line"><span>				# just before the recovery target (off)</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_timeline = &#39;latest&#39;	# &#39;current&#39;, &#39;latest&#39;, or timeline ID</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#recovery_target_action = &#39;pause&#39;	# &#39;pause&#39;, &#39;promote&#39;, &#39;shutdown&#39;</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - WAL Summarization -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#summarize_wal = off		# run WAL summarizer process?</span></span>
+<span class="line"><span>#wal_summary_keep_time = &#39;10d&#39;	# when to remove old summary files, 0 = never</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># REPLICATION</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Sending Servers -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># Set these on the primary and on any standby that will send replication data.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#max_wal_senders = 10		# max number of walsender processes</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#max_replication_slots = 10	# max number of replication slots</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span>#wal_keep_size = 0		# in megabytes; 0 disables</span></span>
+<span class="line"><span>#max_slot_wal_keep_size = -1	# in megabytes; -1 disables</span></span>
+<span class="line"><span>#wal_sender_timeout = 60s	# in milliseconds; 0 disables</span></span>
+<span class="line"><span>#track_commit_timestamp = off	# collect timestamp of transaction commit</span></span>
+<span class="line"><span>				# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Primary Server -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These settings are ignored on a standby server.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#synchronous_standby_names = &#39;&#39;	# standby servers that provide sync rep</span></span>
+<span class="line"><span>				# method to choose sync standbys, number of sync standbys,</span></span>
+<span class="line"><span>				# and comma-separated list of application_name</span></span>
+<span class="line"><span>				# from standby(s); &#39;*&#39; = all</span></span>
+<span class="line"><span>#synchronized_standby_slots = &#39;&#39;	# streaming replication standby server slot</span></span>
+<span class="line"><span>				# names that logical walsender processes will wait for</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Standby Servers -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These settings are ignored on a primary server.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#primary_conninfo = &#39;&#39;			# connection string to sending server</span></span>
+<span class="line"><span>#primary_slot_name = &#39;&#39;			# replication slot on sending server</span></span>
+<span class="line"><span>#hot_standby = on			# &quot;off&quot; disallows queries during recovery</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#max_standby_archive_delay = 30s	# max delay before canceling queries</span></span>
+<span class="line"><span>					# when reading WAL from archive;</span></span>
+<span class="line"><span>					# -1 allows indefinite delay</span></span>
+<span class="line"><span>#max_standby_streaming_delay = 30s	# max delay before canceling queries</span></span>
+<span class="line"><span>					# when reading streaming WAL;</span></span>
+<span class="line"><span>					# -1 allows indefinite delay</span></span>
+<span class="line"><span>#wal_receiver_create_temp_slot = off	# create temp slot if primary_slot_name</span></span>
+<span class="line"><span>					# is not set</span></span>
+<span class="line"><span>#wal_receiver_status_interval = 10s	# send replies at least this often</span></span>
+<span class="line"><span>					# 0 disables</span></span>
+<span class="line"><span>#hot_standby_feedback = off		# send info from standby to prevent</span></span>
+<span class="line"><span>					# query conflicts</span></span>
+<span class="line"><span>#wal_receiver_timeout = 60s		# time that receiver waits for</span></span>
+<span class="line"><span>					# communication from primary</span></span>
+<span class="line"><span>					# in milliseconds; 0 disables</span></span>
+<span class="line"><span>#wal_retrieve_retry_interval = 5s	# time to wait before retrying to</span></span>
+<span class="line"><span>					# retrieve WAL after a failed attempt</span></span>
+<span class="line"><span>#recovery_min_apply_delay = 0		# minimum delay for applying changes during recovery</span></span>
+<span class="line"><span>#sync_replication_slots = off		# enables slot synchronization on the physical standby from the primary</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Subscribers -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These settings are ignored on a publisher.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#max_logical_replication_workers = 4	# taken from max_worker_processes</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#max_sync_workers_per_subscription = 2	# taken from max_logical_replication_workers</span></span>
+<span class="line"><span>#max_parallel_apply_workers_per_subscription = 2	# taken from max_logical_replication_workers</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># QUERY TUNING</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Planner Method Configuration -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#enable_async_append = on</span></span>
+<span class="line"><span>#enable_bitmapscan = on</span></span>
+<span class="line"><span>#enable_gathermerge = on</span></span>
+<span class="line"><span>#enable_hashagg = on</span></span>
+<span class="line"><span>#enable_hashjoin = on</span></span>
+<span class="line"><span>#enable_incremental_sort = on</span></span>
+<span class="line"><span>#enable_indexscan = on</span></span>
+<span class="line"><span>#enable_indexonlyscan = on</span></span>
+<span class="line"><span>#enable_material = on</span></span>
+<span class="line"><span>#enable_memoize = on</span></span>
+<span class="line"><span>#enable_mergejoin = on</span></span>
+<span class="line"><span>#enable_nestloop = on</span></span>
+<span class="line"><span>#enable_parallel_append = on</span></span>
+<span class="line"><span>#enable_parallel_hash = on</span></span>
+<span class="line"><span>#enable_partition_pruning = on</span></span>
+<span class="line"><span>#enable_partitionwise_join = off</span></span>
+<span class="line"><span>#enable_partitionwise_aggregate = off</span></span>
+<span class="line"><span>#enable_presorted_aggregate = on</span></span>
+<span class="line"><span>#enable_seqscan = on</span></span>
+<span class="line"><span>#enable_sort = on</span></span>
+<span class="line"><span>#enable_tidscan = on</span></span>
+<span class="line"><span>#enable_group_by_reordering = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Planner Cost Constants -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#seq_page_cost = 1.0			# measured on an arbitrary scale</span></span>
+<span class="line"><span>#random_page_cost = 4.0			# same scale as above</span></span>
+<span class="line"><span>#cpu_tuple_cost = 0.01			# same scale as above</span></span>
+<span class="line"><span>#cpu_index_tuple_cost = 0.005		# same scale as above</span></span>
+<span class="line"><span>#cpu_operator_cost = 0.0025		# same scale as above</span></span>
+<span class="line"><span>#parallel_setup_cost = 1000.0		# same scale as above</span></span>
+<span class="line"><span>#parallel_tuple_cost = 0.1		# same scale as above</span></span>
+<span class="line"><span>#min_parallel_table_scan_size = 8MB</span></span>
+<span class="line"><span>#min_parallel_index_scan_size = 512kB</span></span>
+<span class="line"><span>#effective_cache_size = 4GB</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#jit_above_cost = 100000		# perform JIT compilation if available</span></span>
+<span class="line"><span>					# and query more expensive than this;</span></span>
+<span class="line"><span>					# -1 disables</span></span>
+<span class="line"><span>#jit_inline_above_cost = 500000		# inline small functions if query is</span></span>
+<span class="line"><span>					# more expensive than this; -1 disables</span></span>
+<span class="line"><span>#jit_optimize_above_cost = 500000	# use expensive JIT optimizations if</span></span>
+<span class="line"><span>					# query is more expensive than this;</span></span>
+<span class="line"><span>					# -1 disables</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Genetic Query Optimizer -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#geqo = on</span></span>
+<span class="line"><span>#geqo_threshold = 12</span></span>
+<span class="line"><span>#geqo_effort = 5			# range 1-10</span></span>
+<span class="line"><span>#geqo_pool_size = 0			# selects default based on effort</span></span>
+<span class="line"><span>#geqo_generations = 0			# selects default based on effort</span></span>
+<span class="line"><span>#geqo_selection_bias = 2.0		# range 1.5-2.0</span></span>
+<span class="line"><span>#geqo_seed = 0.0			# range 0.0-1.0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Other Planner Options -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#default_statistics_target = 100	# range 1-10000</span></span>
+<span class="line"><span>#constraint_exclusion = partition	# on, off, or partition</span></span>
+<span class="line"><span>#cursor_tuple_fraction = 0.1		# range 0.0-1.0</span></span>
+<span class="line"><span>#from_collapse_limit = 8</span></span>
+<span class="line"><span>#jit = on				# allow JIT compilation</span></span>
+<span class="line"><span>#join_collapse_limit = 8		# 1 disables collapsing of explicit</span></span>
+<span class="line"><span>					# JOIN clauses</span></span>
+<span class="line"><span>#plan_cache_mode = auto			# auto, force_generic_plan or</span></span>
+<span class="line"><span>					# force_custom_plan</span></span>
+<span class="line"><span>#recursive_worktable_factor = 10.0	# range 0.001-1000000</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># REPORTING AND LOGGING</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Where to Log -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_destination = &#39;stderr&#39;		# Valid values are combinations of</span></span>
+<span class="line"><span>					# stderr, csvlog, jsonlog, syslog, and</span></span>
+<span class="line"><span>					# eventlog, depending on platform.</span></span>
+<span class="line"><span>					# csvlog and jsonlog require</span></span>
+<span class="line"><span>					# logging_collector to be on.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># This is used when logging to stderr:</span></span>
+<span class="line"><span>#logging_collector = off		# Enable capturing of stderr, jsonlog,</span></span>
+<span class="line"><span>					# and csvlog into log files. Required</span></span>
+<span class="line"><span>					# to be on for csvlogs and jsonlogs.</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These are only used if logging_collector is on:</span></span>
+<span class="line"><span>#log_directory = &#39;log&#39;			# directory where log files are written,</span></span>
+<span class="line"><span>					# can be absolute or relative to PGDATA</span></span>
+<span class="line"><span>#log_filename = &#39;postgresql-%Y-%m-%d_%H%M%S.log&#39;	# log file name pattern,</span></span>
+<span class="line"><span>							# can include strftime() escapes</span></span>
+<span class="line"><span>#log_file_mode = 0600			# creation mode for log files,</span></span>
+<span class="line"><span>					# begin with 0 to use octal notation</span></span>
+<span class="line"><span>#log_rotation_age = 1d			# Automatic rotation of logfiles will</span></span>
+<span class="line"><span>					# happen after that time.  0 disables.</span></span>
+<span class="line"><span>#log_rotation_size = 10MB		# Automatic rotation of logfiles will</span></span>
+<span class="line"><span>					# happen after that much log output.</span></span>
+<span class="line"><span>					# 0 disables.</span></span>
+<span class="line"><span>#log_truncate_on_rotation = off		# If on, an existing log file with the</span></span>
+<span class="line"><span>					# same name as the new log file will be</span></span>
+<span class="line"><span>					# truncated rather than appended to.</span></span>
+<span class="line"><span>					# But such truncation only occurs on</span></span>
+<span class="line"><span>					# time-driven rotation, not on restarts</span></span>
+<span class="line"><span>					# or size-driven rotation.  Default is</span></span>
+<span class="line"><span>					# off, meaning append to existing files</span></span>
+<span class="line"><span>					# in all cases.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These are relevant when logging to syslog:</span></span>
+<span class="line"><span>#syslog_facility = &#39;LOCAL0&#39;</span></span>
+<span class="line"><span>#syslog_ident = &#39;postgres&#39;</span></span>
+<span class="line"><span>#syslog_sequence_numbers = on</span></span>
+<span class="line"><span>#syslog_split_messages = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># This is only relevant when logging to eventlog (Windows):</span></span>
+<span class="line"><span># (change requires restart)</span></span>
+<span class="line"><span>#event_source = &#39;PostgreSQL&#39;</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - When to Log -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_min_messages = warning		# values in order of decreasing detail:</span></span>
+<span class="line"><span>					#   debug5</span></span>
+<span class="line"><span>					#   debug4</span></span>
+<span class="line"><span>					#   debug3</span></span>
+<span class="line"><span>					#   debug2</span></span>
+<span class="line"><span>					#   debug1</span></span>
+<span class="line"><span>					#   info</span></span>
+<span class="line"><span>					#   notice</span></span>
+<span class="line"><span>					#   warning</span></span>
+<span class="line"><span>					#   error</span></span>
+<span class="line"><span>					#   log</span></span>
+<span class="line"><span>					#   fatal</span></span>
+<span class="line"><span>					#   panic</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_min_error_statement = error	# values in order of decreasing detail:</span></span>
+<span class="line"><span>					#   debug5</span></span>
+<span class="line"><span>					#   debug4</span></span>
+<span class="line"><span>					#   debug3</span></span>
+<span class="line"><span>					#   debug2</span></span>
+<span class="line"><span>					#   debug1</span></span>
+<span class="line"><span>					#   info</span></span>
+<span class="line"><span>					#   notice</span></span>
+<span class="line"><span>					#   warning</span></span>
+<span class="line"><span>					#   error</span></span>
+<span class="line"><span>					#   log</span></span>
+<span class="line"><span>					#   fatal</span></span>
+<span class="line"><span>					#   panic (effectively off)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_min_duration_statement = -1	# -1 is disabled, 0 logs all statements</span></span>
+<span class="line"><span>					# and their durations, &gt; 0 logs only</span></span>
+<span class="line"><span>					# statements running at least this number</span></span>
+<span class="line"><span>					# of milliseconds</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_min_duration_sample = -1		# -1 is disabled, 0 logs a sample of statements</span></span>
+<span class="line"><span>					# and their durations, &gt; 0 logs only a sample of</span></span>
+<span class="line"><span>					# statements running at least this number</span></span>
+<span class="line"><span>					# of milliseconds;</span></span>
+<span class="line"><span>					# sample fraction is determined by log_statement_sample_rate</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_statement_sample_rate = 1.0	# fraction of logged statements exceeding</span></span>
+<span class="line"><span>					# log_min_duration_sample to be logged;</span></span>
+<span class="line"><span>					# 1.0 logs all such statements, 0.0 never logs</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_transaction_sample_rate = 0.0	# fraction of transactions whose statements</span></span>
+<span class="line"><span>					# are logged regardless of their duration; 1.0 logs all</span></span>
+<span class="line"><span>					# statements from all transactions, 0.0 never logs</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#log_startup_progress_interval = 10s	# Time between progress updates for</span></span>
+<span class="line"><span>					# long-running startup operations.</span></span>
+<span class="line"><span>					# 0 disables the feature, &gt; 0 indicates</span></span>
+<span class="line"><span>					# the interval in milliseconds.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - What to Log -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#debug_print_parse = off</span></span>
+<span class="line"><span>#debug_print_rewritten = off</span></span>
+<span class="line"><span>#debug_print_plan = off</span></span>
+<span class="line"><span>#debug_pretty_print = on</span></span>
+<span class="line"><span>#log_autovacuum_min_duration = 10min	# log autovacuum activity;</span></span>
+<span class="line"><span>					# -1 disables, 0 logs all actions and</span></span>
+<span class="line"><span>					# their durations, &gt; 0 logs only</span></span>
+<span class="line"><span>					# actions running at least this number</span></span>
+<span class="line"><span>					# of milliseconds.</span></span>
+<span class="line"><span>#log_checkpoints = on</span></span>
+<span class="line"><span>#log_connections = off</span></span>
+<span class="line"><span>#log_disconnections = off</span></span>
+<span class="line"><span>#log_duration = off</span></span>
+<span class="line"><span>#log_error_verbosity = default		# terse, default, or verbose messages</span></span>
+<span class="line"><span>#log_hostname = off</span></span>
+<span class="line"><span>#log_line_prefix = &#39;%m [%p] &#39;		# special values:</span></span>
+<span class="line"><span>					#   %a = application name</span></span>
+<span class="line"><span>					#   %u = user name</span></span>
+<span class="line"><span>					#   %d = database name</span></span>
+<span class="line"><span>					#   %r = remote host and port</span></span>
+<span class="line"><span>					#   %h = remote host</span></span>
+<span class="line"><span>					#   %b = backend type</span></span>
+<span class="line"><span>					#   %p = process ID</span></span>
+<span class="line"><span>					#   %P = process ID of parallel group leader</span></span>
+<span class="line"><span>					#   %t = timestamp without milliseconds</span></span>
+<span class="line"><span>					#   %m = timestamp with milliseconds</span></span>
+<span class="line"><span>					#   %n = timestamp with milliseconds (as a Unix epoch)</span></span>
+<span class="line"><span>					#   %Q = query ID (0 if none or not computed)</span></span>
+<span class="line"><span>					#   %i = command tag</span></span>
+<span class="line"><span>					#   %e = SQL state</span></span>
+<span class="line"><span>					#   %c = session ID</span></span>
+<span class="line"><span>					#   %l = session line number</span></span>
+<span class="line"><span>					#   %s = session start timestamp</span></span>
+<span class="line"><span>					#   %v = virtual transaction ID</span></span>
+<span class="line"><span>					#   %x = transaction ID (0 if none)</span></span>
+<span class="line"><span>					#   %q = stop here in non-session</span></span>
+<span class="line"><span>					#        processes</span></span>
+<span class="line"><span>					#   %% = &#39;%&#39;</span></span>
+<span class="line"><span>					# e.g. &#39;&lt;%u%%%d&gt; &#39;</span></span>
+<span class="line"><span>#log_lock_waits = off			# log lock waits &gt;= deadlock_timeout</span></span>
+<span class="line"><span>#log_recovery_conflict_waits = off	# log standby recovery conflict waits</span></span>
+<span class="line"><span>					# &gt;= deadlock_timeout</span></span>
+<span class="line"><span>#log_parameter_max_length = -1		# when logging statements, limit logged</span></span>
+<span class="line"><span>					# bind-parameter values to N bytes;</span></span>
+<span class="line"><span>					# -1 means print in full, 0 disables</span></span>
+<span class="line"><span>#log_parameter_max_length_on_error = 0	# when logging an error, limit logged</span></span>
+<span class="line"><span>					# bind-parameter values to N bytes;</span></span>
+<span class="line"><span>					# -1 means print in full, 0 disables</span></span>
+<span class="line"><span>#log_statement = &#39;none&#39;			# none, ddl, mod, all</span></span>
+<span class="line"><span>#log_replication_commands = off</span></span>
+<span class="line"><span>#log_temp_files = -1			# log temporary files equal or larger</span></span>
+<span class="line"><span>					# than the specified size in kilobytes;</span></span>
+<span class="line"><span>					# -1 disables, 0 logs all temp files</span></span>
+<span class="line"><span>#log_timezone = &#39;GMT&#39;</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Process Title -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#cluster_name = &#39;&#39;			# added to process titles if nonempty</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#update_process_title = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># STATISTICS</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Cumulative Query and Index Statistics -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#track_activities = on</span></span>
+<span class="line"><span>#track_activity_query_size = 1024	# (change requires restart)</span></span>
+<span class="line"><span>#track_counts = on</span></span>
+<span class="line"><span>#track_io_timing = off</span></span>
+<span class="line"><span>#track_wal_io_timing = off</span></span>
+<span class="line"><span>#track_functions = none			# none, pl, all</span></span>
+<span class="line"><span>#stats_fetch_consistency = cache	# cache, none, snapshot</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Monitoring -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#compute_query_id = auto</span></span>
+<span class="line"><span>#log_statement_stats = off</span></span>
+<span class="line"><span>#log_parser_stats = off</span></span>
+<span class="line"><span>#log_planner_stats = off</span></span>
+<span class="line"><span>#log_executor_stats = off</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># AUTOVACUUM</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#autovacuum = on			# Enable autovacuum subprocess?  &#39;on&#39;</span></span>
+<span class="line"><span>					# requires track_counts to also be on.</span></span>
+<span class="line"><span>#autovacuum_max_workers = 3		# max number of autovacuum subprocesses</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#autovacuum_naptime = 1min		# time between autovacuum runs</span></span>
+<span class="line"><span>#autovacuum_vacuum_threshold = 50	# min number of row updates before</span></span>
+<span class="line"><span>					# vacuum</span></span>
+<span class="line"><span>#autovacuum_vacuum_insert_threshold = 1000	# min number of row inserts</span></span>
+<span class="line"><span>						# before vacuum; -1 disables insert</span></span>
+<span class="line"><span>						# vacuums</span></span>
+<span class="line"><span>#autovacuum_analyze_threshold = 50	# min number of row updates before</span></span>
+<span class="line"><span>					# analyze</span></span>
+<span class="line"><span>#autovacuum_vacuum_scale_factor = 0.2	# fraction of table size before vacuum</span></span>
+<span class="line"><span>#autovacuum_vacuum_insert_scale_factor = 0.2	# fraction of inserts over table</span></span>
+<span class="line"><span>						# size before insert vacuum</span></span>
+<span class="line"><span>#autovacuum_analyze_scale_factor = 0.1	# fraction of table size before analyze</span></span>
+<span class="line"><span>#autovacuum_freeze_max_age = 200000000	# maximum XID age before forced vacuum</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#autovacuum_multixact_freeze_max_age = 400000000	# maximum multixact age</span></span>
+<span class="line"><span>							# before forced vacuum</span></span>
+<span class="line"><span>							# (change requires restart)</span></span>
+<span class="line"><span>#autovacuum_vacuum_cost_delay = 2ms	# default vacuum cost delay for</span></span>
+<span class="line"><span>					# autovacuum, in milliseconds;</span></span>
+<span class="line"><span>					# -1 means use vacuum_cost_delay</span></span>
+<span class="line"><span>#autovacuum_vacuum_cost_limit = -1	# default vacuum cost limit for</span></span>
+<span class="line"><span>					# autovacuum, -1 means use</span></span>
+<span class="line"><span>					# vacuum_cost_limit</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># CLIENT CONNECTION DEFAULTS</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Statement Behavior -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#client_min_messages = notice		# values in order of decreasing detail:</span></span>
+<span class="line"><span>					#   debug5</span></span>
+<span class="line"><span>					#   debug4</span></span>
+<span class="line"><span>					#   debug3</span></span>
+<span class="line"><span>					#   debug2</span></span>
+<span class="line"><span>					#   debug1</span></span>
+<span class="line"><span>					#   log</span></span>
+<span class="line"><span>					#   notice</span></span>
+<span class="line"><span>					#   warning</span></span>
+<span class="line"><span>					#   error</span></span>
+<span class="line"><span>#search_path = &#39;&quot;$user&quot;, public&#39;	# schema names</span></span>
+<span class="line"><span>#row_security = on</span></span>
+<span class="line"><span>#default_table_access_method = &#39;heap&#39;</span></span>
+<span class="line"><span>#default_tablespace = &#39;&#39;		# a tablespace name, &#39;&#39; uses the default</span></span>
+<span class="line"><span>#default_toast_compression = &#39;pglz&#39;	# &#39;pglz&#39; or &#39;lz4&#39;</span></span>
+<span class="line"><span>#temp_tablespaces = &#39;&#39;			# a list of tablespace names, &#39;&#39; uses</span></span>
+<span class="line"><span>					# only default tablespace</span></span>
+<span class="line"><span>#check_function_bodies = on</span></span>
+<span class="line"><span>#default_transaction_isolation = &#39;read committed&#39;</span></span>
+<span class="line"><span>#default_transaction_read_only = off</span></span>
+<span class="line"><span>#default_transaction_deferrable = off</span></span>
+<span class="line"><span>#session_replication_role = &#39;origin&#39;</span></span>
+<span class="line"><span>#statement_timeout = 0				# in milliseconds, 0 is disabled</span></span>
+<span class="line"><span>#transaction_timeout = 0			# in milliseconds, 0 is disabled</span></span>
+<span class="line"><span>#lock_timeout = 0				# in milliseconds, 0 is disabled</span></span>
+<span class="line"><span>#idle_in_transaction_session_timeout = 0	# in milliseconds, 0 is disabled</span></span>
+<span class="line"><span>#idle_session_timeout = 0			# in milliseconds, 0 is disabled</span></span>
+<span class="line"><span>#vacuum_freeze_table_age = 150000000</span></span>
+<span class="line"><span>#vacuum_freeze_min_age = 50000000</span></span>
+<span class="line"><span>#vacuum_failsafe_age = 1600000000</span></span>
+<span class="line"><span>#vacuum_multixact_freeze_table_age = 150000000</span></span>
+<span class="line"><span>#vacuum_multixact_freeze_min_age = 5000000</span></span>
+<span class="line"><span>#vacuum_multixact_failsafe_age = 1600000000</span></span>
+<span class="line"><span>#bytea_output = &#39;hex&#39;			# hex, escape</span></span>
+<span class="line"><span>#xmlbinary = &#39;base64&#39;</span></span>
+<span class="line"><span>#xmloption = &#39;content&#39;</span></span>
+<span class="line"><span>#gin_pending_list_limit = 4MB</span></span>
+<span class="line"><span>#createrole_self_grant = &#39;&#39;		# set and/or inherit</span></span>
+<span class="line"><span>#event_triggers = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Locale and Formatting -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#datestyle = &#39;iso, mdy&#39;</span></span>
+<span class="line"><span>#intervalstyle = &#39;postgres&#39;</span></span>
+<span class="line"><span>#timezone = &#39;GMT&#39;</span></span>
+<span class="line"><span>#timezone_abbreviations = &#39;Default&#39;	# Select the set of available time zone</span></span>
+<span class="line"><span>					# abbreviations.  Currently, there are</span></span>
+<span class="line"><span>					#   Default</span></span>
+<span class="line"><span>					#   Australia (historical usage)</span></span>
+<span class="line"><span>					#   India</span></span>
+<span class="line"><span>					# You can create your own file in</span></span>
+<span class="line"><span>					# share/timezonesets/.</span></span>
+<span class="line"><span>#extra_float_digits = 1			# min -15, max 3; any value &gt;0 actually</span></span>
+<span class="line"><span>					# selects precise output mode</span></span>
+<span class="line"><span>#client_encoding = sql_ascii		# actually, defaults to database</span></span>
+<span class="line"><span>					# encoding</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These settings are initialized by initdb, but they can be changed.</span></span>
+<span class="line"><span>#lc_messages = &#39;&#39;			# locale for system error message</span></span>
+<span class="line"><span>					# strings</span></span>
+<span class="line"><span>#lc_monetary = &#39;C&#39;			# locale for monetary formatting</span></span>
+<span class="line"><span>#lc_numeric = &#39;C&#39;			# locale for number formatting</span></span>
+<span class="line"><span>#lc_time = &#39;C&#39;				# locale for time formatting</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#icu_validation_level = warning		# report ICU locale validation</span></span>
+<span class="line"><span>					# errors at the given level</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># default configuration for text search</span></span>
+<span class="line"><span>#default_text_search_config = &#39;pg_catalog.simple&#39;</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Shared Library Preloading -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#local_preload_libraries = &#39;&#39;</span></span>
+<span class="line"><span>#session_preload_libraries = &#39;&#39;</span></span>
+<span class="line"><span>#shared_preload_libraries = &#39;&#39;		# (change requires restart)</span></span>
+<span class="line"><span>#jit_provider = &#39;llvmjit&#39;		# JIT library to use</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Other Defaults -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#dynamic_library_path = &#39;$libdir&#39;</span></span>
+<span class="line"><span>#extension_destdir = &#39;&#39;			# prepend path when loading extensions</span></span>
+<span class="line"><span>					# and shared objects (added by Debian)</span></span>
+<span class="line"><span>#gin_fuzzy_search_limit = 0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># LOCK MANAGEMENT</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#deadlock_timeout = 1s</span></span>
+<span class="line"><span>#max_locks_per_transaction = 64		# min 10</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#max_pred_locks_per_transaction = 64	# min 10</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#max_pred_locks_per_relation = -2	# negative values mean</span></span>
+<span class="line"><span>					# (max_pred_locks_per_transaction</span></span>
+<span class="line"><span>					#  / -max_pred_locks_per_relation) - 1</span></span>
+<span class="line"><span>#max_pred_locks_per_page = 2		# min 0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># VERSION AND PLATFORM COMPATIBILITY</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Previous PostgreSQL Versions -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#array_nulls = on</span></span>
+<span class="line"><span>#backslash_quote = safe_encoding	# on, off, or safe_encoding</span></span>
+<span class="line"><span>#escape_string_warning = on</span></span>
+<span class="line"><span>#lo_compat_privileges = off</span></span>
+<span class="line"><span>#quote_all_identifiers = off</span></span>
+<span class="line"><span>#standard_conforming_strings = on</span></span>
+<span class="line"><span>#synchronize_seqscans = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># - Other Platforms and Clients -</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#transform_null_equals = off</span></span>
+<span class="line"><span>#allow_alter_system = on</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># ERROR HANDLING</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#exit_on_error = off			# terminate session on any error?</span></span>
+<span class="line"><span>#restart_after_crash = on		# reinitialize after backend crash?</span></span>
+<span class="line"><span>#data_sync_retry = off			# retry or panic on failure to fsync</span></span>
+<span class="line"><span>					# data?</span></span>
+<span class="line"><span>					# (change requires restart)</span></span>
+<span class="line"><span>#recovery_init_sync_method = fsync	# fsync, syncfs (Linux 5.8+)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># CONFIG FILE INCLUDES</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># These options allow settings to be loaded from files other than the</span></span>
+<span class="line"><span># default postgresql.conf.  Note that these are directives, not variable</span></span>
+<span class="line"><span># assignments, so they can usefully be given more than once.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#include_dir = &#39;...&#39;			# include files ending in &#39;.conf&#39; from</span></span>
+<span class="line"><span>					# a directory, e.g., &#39;conf.d&#39;</span></span>
+<span class="line"><span>#include_if_exists = &#39;...&#39;		# include file only if it exists</span></span>
+<span class="line"><span>#include = &#39;...&#39;			# include file</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span># CUSTOMIZED OPTIONS</span></span>
+<span class="line"><span>#------------------------------------------------------------------------------</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># Add settings for extensions here</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div></details><div class="hint-container tip"><p class="hint-container-title">提示</p><p>配置文件是从postgres容器内拷贝出来的，修改了最大连接数和shared_buffers内存大小，如有需要可自行修改</p></div><ol start="3"><li>创建Dockerfile文件</li></ol><div class="language-dockerfile line-numbers-mode" data-ext="dockerfile" data-title="dockerfile"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#1E754F;--shiki-dark:#4D9375;">FROM</span><span style="--shiki-light:#393A34;--shiki-dark:#DBD7CAEE;"> postgres:17.2-alpine</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#A0ADA0;--shiki-dark:#758575DD;"># COPY sql/ry_*.sql /docker-entrypoint-initdb.d/ # 可选</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#1E754F;--shiki-dark:#4D9375;">ARG</span><span style="--shiki-light:#393A34;--shiki-dark:#DBD7CAEE;"> USER</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#1E754F;--shiki-dark:#4D9375;">RUN</span><span style="--shiki-light:#393A34;--shiki-dark:#DBD7CAEE;"> useradd -m -s /bin/bash $USER</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div></div><!--]--></div></article><h2 id="创建docker-compose配置文件-compose-yaml" tabindex="-1"><a class="header-anchor" href="#创建docker-compose配置文件-compose-yaml"><span>创建docker compose配置文件 compose.yaml</span></a></h2><article class="vp-card-wrapper" data-v-3a2cdab8><!--[--><!----><!--]--><div class="body" data-v-3a2cdab8><!--[--><div class="hint-container warning"><p class="hint-container-title">注意</p><ul><li>数据卷都挂载在 <strong>${HOME}/data/postgres</strong> 目录下，请提前创建好对应目录，也可自行修改挂载目录</li><li><strong>postgresql.conf</strong> 配置文件需要拷贝到 <strong>${HOME}/data/postgres/conf</strong> 目录下</li></ul><div class="language-shell line-numbers-mode" data-ext="shell" data-title="shell"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">mkdir</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -p</span><span style="--shiki-light:#999999;--shiki-dark:#666666;"> ${</span><span style="--shiki-light:#B07D48;--shiki-dark:#BD976A;">HOME</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">}</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">/data/postgres/conf</span></span>
+<span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">mkdir</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -p</span><span style="--shiki-light:#999999;--shiki-dark:#666666;"> ${</span><span style="--shiki-light:#B07D48;--shiki-dark:#BD976A;">HOME</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">}</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">/data/postgres/data</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div><div class="line-number"></div></div></div></div><div class="language-yaml line-numbers-mode" data-ext="yaml" data-title="yaml"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">services</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">  postgres</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    build</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#393A34;--shiki-dark:#DBD7CAEE;"> </span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">      context</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> postgres</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">      dockerfile</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> Dockerfile</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    image</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> postgres:17.2-alpine</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    container_name</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> postgres</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    restart</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> always</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    user</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> ${UID}:${GID}</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    networks</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#999999;--shiki-dark:#666666;">      -</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> docker_net0</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    ports</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#999999;--shiki-dark:#666666;">      -</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> 5432:5432</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    environment</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">      TZ</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> Asia/Shanghai</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">      POSTGRES_PASSWORD</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> ${POSTGRES_PASSWORD:-admin@123456}</span></span>
+<span class="line"><span style="--shiki-light:#A0ADA0;--shiki-dark:#758575DD;">    # 指定配置文件启动</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    command</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span><span style="--shiki-light:#999999;--shiki-dark:#666666;"> [</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;">&quot;</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">postgres</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;">&quot;</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">,</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;"> &quot;</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">-c</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;">&quot;</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">,</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;"> &quot;</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">config_file=/etc/postgresql/postgresql.conf</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;">&quot;</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">]</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">    volumes</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#A0ADA0;--shiki-dark:#758575DD;">      # 数据目录挂载</span></span>
+<span class="line"><span style="--shiki-light:#999999;--shiki-dark:#666666;">      -</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> ${HOME}/data/postgres/data:/var/lib/postgresql/data</span></span>
+<span class="line"><span style="--shiki-light:#999999;--shiki-dark:#666666;">      -</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> ${HOME}/data/postgres/conf/postgresql.conf:/etc/postgresql/postgresql.conf</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">networks</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span>
+<span class="line"><span style="--shiki-light:#A0ADA0;--shiki-dark:#758575DD;">  # 自定义一个桥接网络</span></span>
+<span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">  docker_net0</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">:</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><div class="hint-container tip"><p class="hint-container-title">提示</p><p>以下环境变量可自行修改</p><ul><li>POSTGRES_PASSWORD: 登陆密码，必填</li><li>POSTGRES_USER: 登录用户，选填，默认为postgres</li><li>POSTGRES_DB: 数据库，选填，默认为postgres</li></ul></div><!--]--></div></article><h2 id="构建并启动" tabindex="-1"><a class="header-anchor" href="#构建并启动"><span>构建并启动</span></a></h2><article class="vp-card-wrapper" data-v-3a2cdab8><!--[--><!----><!--]--><div class="body" data-v-3a2cdab8><!--[--><div class="language-shell line-numbers-mode" data-ext="shell" data-title="shell"><button class="copy" title="复制代码" data-copied="已复制"></button><pre class="shiki shiki-themes vitesse-light vitesse-dark vp-code"><code><span class="line"><span style="--shiki-light:#998418;--shiki-dark:#B8A965;">echo</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -e</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;"> &quot;</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">UID=</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">$(</span><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">id</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -u</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">)</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;">\nGID=</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">$(</span><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">id</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -g</span><span style="--shiki-light:#999999;--shiki-dark:#666666;">)</span><span style="--shiki-light:#B5695977;--shiki-dark:#C98A7D77;">&quot;</span><span style="--shiki-light:#AB5959;--shiki-dark:#CB7676;"> &gt;</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> .env</span></span>
+<span class="line"><span style="--shiki-light:#59873A;--shiki-dark:#80A665;">docker</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> compose</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> up</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> --build</span><span style="--shiki-light:#A65E2B;--shiki-dark:#C99076;"> -d</span><span style="--shiki-light:#B56959;--shiki-dark:#C98A7D;"> postgres</span></span></code></pre><div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0;"><div class="line-number"></div><div class="line-number"></div></div></div><!--]--></div></article><h2 id="参考" tabindex="-1"><a class="header-anchor" href="#参考"><span>参考</span></a></h2><article class="vp-card-wrapper" data-v-3a2cdab8><!--[--><!----><!--]--><div class="body" data-v-3a2cdab8><!--[--><ul><li><a href="https://docs.docker.com/manuals" target="_blank" rel="noopener noreferrer">Docker官方手册</a></li><li><a href="https://docs.docker.com/reference/" target="_blank" rel="noopener noreferrer">Docker官方参考文档</a></li><li><a href="https://postgres.ac.cn/docs/17/index.html" target="_blank" rel="noopener noreferrer">PostgreSQL文档</a></li><li><a href="https://github.com/docker-library/docs/blob/master/postgres/README.md" target="_blank" rel="noopener noreferrer">Docker PostgreSQL镜像手册</a></li></ul><!--]--></div></article></div><!----><!----><!----></div></main><footer class="vp-doc-footer" data-v-fc4bf443 data-v-1402f9be><!--[--><!--]--><!----><div class="contributors" aria-label="Contributors" data-v-1402f9be><span class="contributors-label" data-v-1402f9be>贡献者: </span><span class="contributors-info" data-v-1402f9be><!--[--><!--[--><span class="contributor" data-v-1402f9be>huaihuashu</span><!--[-->, <!--]--><!--]--><!--[--><span class="contributor" data-v-1402f9be>huaihuashu</span><!----><!--]--><!--]--></span></div><nav class="prev-next" data-v-1402f9be><div class="pager" data-v-1402f9be><a class="vp-link no-icon link pager-link prev" href="/article/slhebt4l/" data-v-1402f9be data-v-012aed44><!--[--><span class="desc" data-v-1402f9be>上一页</span><span class="title" data-v-1402f9be>Docker安装jenkins</span><!--]--><!----></a></div><div class="pager" data-v-1402f9be><a class="vp-link no-icon link pager-link next" href="/article/hzkb43o4/" data-v-1402f9be data-v-012aed44><!--[--><span class="desc" data-v-1402f9be>下一页</span><span class="title" data-v-1402f9be>Docker安装nginx</span><!--]--><!----></a></div></nav></footer><div id="comment" class="giscus-wrapper input-top vp-comment" vp-comment style="display:block;" data-v-fc4bf443><div class="loading-icon-wrapper" style="display:flex;align-items:center;justify-content:center;height:96px"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" preserveAspectRatio="xMidYMid" viewBox="25 25 50 50"><animateTransform attributeName="transform" type="rotate" dur="2s" keyTimes="0;1" repeatCount="indefinite" values="0;360"></animateTransform><circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><animate attributeName="stroke-dasharray" dur="1.5s" keyTimes="0;0.5;1" repeatCount="indefinite" values="1,200;90,200;1,200"></animate><animate attributeName="stroke-dashoffset" dur="1.5s" keyTimes="0;0.5;1" repeatCount="indefinite" values="0;-35px;-125px"></animate></circle></svg></div></div><!--[--><!--]--></div></div></div><!--[--><!--]--></div></div><!--]--><button style="display:none;" type="button" class="vp-back-to-top" aria-label="back to top" data-v-3b796272 data-v-fd23df1f><span class="percent" data-allow-mismatch data-v-fd23df1f>0%</span><span class="show icon vpi-back-to-top" data-v-fd23df1f></span><svg aria-hidden="true" data-v-fd23df1f><circle cx="50%" cy="50%" data-allow-mismatch style="stroke-dasharray:calc(0% - 12.566370614359172px) calc(314.1592653589793% - 12.566370614359172px);" data-v-fd23df1f></circle></svg></button><footer class="vp-footer" vp-footer data-v-3b796272 data-v-2b638419><!--[--><div class="container" data-v-2b638419><!----><p class="copyright" data-v-2b638419>© 2025 未眠的蓝鸟</p></div><!--]--></footer><!--[--><!--]--><!--]--></div><!----><!--]--><!--[--><!--]--><!--]--></div><script type="module" src="/assets/app-DCT_UAW9.js" defer></script></body></html>
