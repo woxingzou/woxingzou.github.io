@@ -1,5 +1,3 @@
-User-agent:*
-Allow:/
-
-User-agent:*
-Disallow:
+User-agent: *
+Allow: /
+Sitemap: https://blog.shaocz.me/sitemap.xml
