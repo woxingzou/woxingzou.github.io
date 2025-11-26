@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://blog.shaocz.me/sitemap.xml
+Sitemap: https://blog.shaoc88.com/sitemap.xml
